@@ -1,0 +1,46 @@
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define MSGSZ 128
+
+// Elementos de un mensaje
+typedef struct msgbuf {
+  long mtype;
+  char mtext[MSGSZ];
+} message_buf;
+
+int main(){
+  int msqid;
+  key_t key;
+  message_buf rbuf, sbuf;
+  size_t buf_lenght;
+
+  key = 1234;
+
+  if ((msqid = msgget(key, 0666)) < 0){
+    perror("msgget");
+    exit(1);
+  }
+
+  sbuf.mtype = 1;
+  (void)strcpy(sbuf.mtext, "CLIENTE2: Hola, soy el cliente 2");
+  buf_lenght = strlen(sbuf.mtext) + 1;
+
+  if (msgsnd(msqid, &sbuf, buf_lenght, IPC_NOWAIT) < 0){
+    perror("msgsnd");
+    exit(1);
+  }
+
+  if (msgrcv(msqid, &rbuf, MSGSZ, 3, 0) < 0){
+    perror("msgrcv");
+    exit(1);
+  }
+
+  printf("Servidor: %s\n", rbuf.mtext);
+
+  exit(0);
+}
+
